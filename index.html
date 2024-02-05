@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300&display=swap" rel="stylesheet">
+    <title>Seguimiento de Anime</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            transition: background-color 0.3s ease;
+            font-family: 'Noto Sans', sans-serif;
+        }
+        header, footer {
+            text-align: center;
+            padding: 10px;
+        }
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            border: 2px solid #ff69b4;
+            transition: box-shadow 0.3s ease;
+        }
+        #title-text{
+            font-size: 20px;
+            color: #ff69b4;
+        }
+        h1 {
+            text-align: center;
+            color: #ff69b4;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+        label {
+            margin-bottom: 5px;
+        }
+        input, button {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #ff69b4;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #animeTable{
+            max-height: 400px !important; /* Ajusta la altura máxima según tus preferencias */
+            overflow-y: scroll;
+        }
+        #darkModeButton{
+            margin-top: 20px;
+        }
+        .error-message {
+            color: #ff69b4;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #ff69b4;
+            color: #fff;
+        }
+        #sakuraIcon {
+            display: block;
+            margin: 0 auto;
+            width: 150px;
+            height: 50px;
+        }
+        /* Estilos para el modo oscuro */
+        .dark-mode {
+            background-color: #333;
+            color: #000;
+        }
+        .dark-mode-app {
+            background-color: #333 !important;
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.1); /* Cambio en el color de la sombra */
+            color: #fff;
+        }
+        .dark-mode-footer{
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Seguimiento de Anime</h1>
+    </header>
+
+    <div id="app">
+        <img src="/assets/uwu.png" alt="Icono Sakura" id="sakuraIcon">
+        <p id="title-text">Introduce aquí tu anime</p>
+        <form id="animeForm">
+            <label for="title">Título:</label>
+            <input type="text" id="title" required>
+            <label for="season">Temporada:</label>
+            <input type="text" id="season" required>
+            <label for="episode">Episodio:</label>
+            <input type="number" id="episode" required>
+            <button type="button" onclick="addAnime()">Guardar</button>
+            <audio id="successSound" src="#"></audio> <!-- aquí pondremos el audio que queramos -->
+            <p class="error-message" id="errorMessage"></p>
+        </form>
+        <table id="animeTable">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Temporada</th>
+                    <th>Episodio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <button id="darkModeButton" onclick="toggleDarkMode()">Cambiar Modo</button>
+    </div>
+
+    <footer id="footer">
+        <p>© 2024 Seguimiento de Anime. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Cargar datos almacenados en localStorage al cargar la página
+            loadAnimeTable();
+            // Recuperar el estado del modo oscuro
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                enableDarkMode();
+            }
+        });
+
+        function addAnime() {
+            var title = document.getElementById('title').value;
+            var season = document.getElementById('season').value;
+            var episode = document.getElementById('episode').value;
+
+            var errorMessage = document.getElementById('errorMessage');
+            errorMessage.innerText = '';
+
+            if (!title || !season || !episode) {
+                errorMessage.innerText = 'Falta algún campo por rellenar.';
+                return;
+            }
+
+            var animeTableBody = document.querySelector('#animeTable tbody');
+            var row = animeTableBody.insertRow();
+            var cellTitle = row.insertCell(0);
+            var cellSeason = row.insertCell(1);
+            var cellEpisode = row.insertCell(2);
+            var cellActions = row.insertCell(3);
+
+            cellTitle.textContent = title;
+            cellSeason.textContent = season;
+            cellEpisode.textContent = episode;
+            cellActions.innerHTML = '<button onclick="removeAnime(this)">Eliminar</button>';
+
+            // Reproducir sonido
+            playSuccessSound();
+
+            // Guardar en localStorage
+            saveAnimeTable();
+
+            // Limpiar campos del formulario
+            document.getElementById('title').value = '';
+            document.getElementById('season').value = '';
+            document.getElementById('episode').value = '';
+        }
+
+        function playSuccessSound() {
+            var successSound = document.getElementById('successSound');
+            successSound.play();
+        }
+
+        function removeAnime(button) {
+            var row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+
+            // Guardar en localStorage
+            saveAnimeTable();
+        }
+
+        function saveAnimeTable() {
+            var animeTableBody = document.querySelector('#animeTable tbody');
+            var rows = animeTableBody.querySelectorAll('tr');
+
+            var animeTableData = [];
+            rows.forEach(function (row) {
+                var title = row.cells[0].textContent;
+                var season = row.cells[1].textContent;
+                var episode = row.cells[2].textContent;
+                animeTableData.push({ title, season, episode });
+            });
+
+            localStorage.setItem('animeTableData', JSON.stringify(animeTableData));
+        }
+
+        function loadAnimeTable() {
+            var animeTableData = JSON.parse(localStorage.getItem('animeTableData')) || [];
+            var animeTableBody = document.querySelector('#animeTable tbody');
+
+            animeTableData.forEach(function (anime) {
+                var row = animeTableBody.insertRow();
+                var cellTitle = row.insertCell(0);
+                var cellSeason = row.insertCell(1);
+                var cellEpisode = row.insertCell(2);
+                var cellActions = row.insertCell(3);
+
+                cellTitle.textContent = anime.title;
+                cellSeason.textContent = anime.season;
+                cellEpisode.textContent = anime.episode;
+                cellActions.innerHTML = '<button onclick="removeAnime(this)">Eliminar</button>';
+            });
+        }
+
+        function toggleDarkMode() {
+            var body = document.body;
+            var app = document.getElementById('app');
+
+            // Cambiar al modo oscuro si no está activado, y viceversa
+            if (body.classList.contains('dark-mode')) {
+                disableDarkMode();
+            } else {
+                enableDarkMode();
+            }
+        }
+
+        function enableDarkMode() {
+            var body = document.body;
+            var app = document.getElementById('app');
+            var footer = document.getElementById('footer');
+
+            body.classList.add('dark-mode');
+            app.classList.add('dark-mode-app');
+            footer.classList.add('dark-mode-footer');
+
+            // Guardar estado del modo oscuro en localStorage
+            localStorage.setItem('darkMode', 'enabled');
+        }
+
+        function disableDarkMode() {
+            var body = document.body;
+            var app = document.getElementById('app');
+            var footer = document.getElementById('footer');
+
+            body.classList.remove('dark-mode');
+            app.classList.remove('dark-mode-app');
+            footer.classList.remove('dark-mode-footer');
+
+            // Guardar estado del modo oscuro en localStorage
+            localStorage.setItem('darkMode', 'disabled');
+        }
+    </script>
+</body>
+</html>
